@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.I.K.A. - AI-көмекшісі</title>
+    <link rel="stylesheet" href="AIKA.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- QR код библиотека -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Библиотека для безопасного доступа к микрофону -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/adapter.js/8.0.0/adapter.min.js"></script>
+    <!-- Библиотека для распознавания речи -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/RecordRTC/5.6.2/RecordRTC.min.js"></script>
+    <!-- Библиотека для HTTP запросов -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="light-mode">
+    <div class="container">
+        <!-- Заголовок -->
+        <header class="title-frame">
+            <h1>✨ A.I.K.A. ✨</h1>
+        </header>
+
+        <!-- Основная рамка -->
+        <main class="main-frame">
+            <!-- Текстовые поля -->
+            <div class="input-section">
+                <h2><i class="fas fa-font"></i> Текст:</h2>
+                <textarea id="textBox" class="text-box" placeholder="Текст для обработки..."></textarea>
+            </div>
+
+            <div class="translation-section">
+                <h2><i class="fas fa-globe"></i> Аударма:</h2>
+                <textarea id="translationBox" class="text-box" placeholder="Перевод появится здесь..."></textarea>
+            </div>
+
+            <div class="braille-section">
+                <h2><i class="fas fa-braille"></i> Брайль:</h2>
+                <textarea id="brailleBox" class="text-box braille-box" placeholder="Шрифт Брайля появится здесь..."></textarea>
+            </div>
+
+            <!-- Блок QR-кода -->
+            <div class="qr-frame">
+                <div id="qrCode"></div>
+            </div>
+        </main>
+
+        <!-- Блок кнопок управления -->
+        <div class="button-frame">
+            <div class="button-row">
+                <button id="recognizeBtn" class="btn primary-btn">
+                    <i class="fas fa-microphone"></i> Сөйлемді тану
+                </button>
+                <button id="importAudioBtn" class="btn success-btn">
+                    <i class="fas fa-file-audio"></i> Аудионы импорттау
+                    <input type="file" id="audioFileInput" accept="audio/*" style="display: none;">
+                </button>
+                <button id="recordAudioBtn" class="btn warning-btn">
+                    <i class="fas fa-record-vinyl"></i> Жазба
+                </button>
+                <button id="speakTranslationBtn" class="btn accent-btn">
+                    <i class="fas fa-volume-up"></i> Аудармасын айту
+                </button>
+            </div>
+
+            <div class="button-row">
+                <button id="generateQrBtn" class="btn secondary-btn">
+                    <i class="fas fa-qrcode"></i> QR-код
+                </button>
+                <button id="toggleThemeBtn" class="btn dark-btn">
+                    <i class="fas fa-moon"></i> Фон
+                </button>
+                <button id="showBrailleTableBtn" class="btn purple-btn">
+                    <i class="fas fa-table"></i> Брайль кестесі
+                </button>
+                <button id="showLanguageSelectorBtn" class="btn blue-btn">
+                    <i class="fas fa-language"></i> Тілді таңдау
+                </button>
+            </div>
+        </div>
+
+        <!-- Строка статуса -->
+        <div class="status-frame">
+            <p id="langLabel" class="lang-label">🌐 Таңдалған тіл: Қазақша</p>
+            <p id="statusMessage" class="status-message"></p>
+        </div>
+
+        <!-- Модальное окно для выбора языка -->
+        <div id="languageModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>🌐 Аударма тілін таңдаңыз</h2>
+                <div class="language-list">
+                    <button class="lang-btn active" data-lang="kk">🇰🇿 Қазақша</button>
+                    <button class="lang-btn" data-lang="en">🇬🇧 Ағылшынша</button>
+                    <button class="lang-btn" data-lang="ru">🇷🇺 Орысша</button>
+                    <button class="lang-btn" data-lang="ko">🇰🇷 Кореяша</button>
+                    <button class="lang-btn" data-lang="ja">🇯🇵 Жапонша</button>
+                    <button class="lang-btn" data-lang="de">🇩🇪 Немісше</button>
+                    <button class="lang-btn" data-lang="fr">🇫🇷 Французша</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно для таблицы Брайля -->
+        <div id="brailleTableModal" class="modal">
+            <div class="modal-content braille-modal">
+                <span class="close">&times;</span>
+                <h2>Брайль әліпбиі</h2>
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="kazakh">Қазақша</button>
+                    <button class="tab-btn" data-tab="russian">Орысша</button>
+                    <button class="tab-btn" data-tab="latin">Латын</button>
+                    <button class="tab-btn" data-tab="german">Неміс</button>
+                    <button class="tab-btn" data-tab="french">Француз</button>
+                    <button class="tab-btn" data-tab="korean">Корей</button>
+                    <button class="tab-btn" data-tab="japanese">Жапон</button>
+                    <button class="tab-btn" data-tab="numbers">Сандар & Белгілер</button>
+                </div>
+                <div class="tab-content">
+                    <div id="kazakh" class="tab-pane active">
+                        <div class="braille-grid" id="kazakhGrid"></div>
+                    </div>
+                    <div id="russian" class="tab-pane">
+                        <div class="braille-grid" id="russianGrid"></div>
+                    </div>
+                    <div id="latin" class="tab-pane">
+                        <div class="braille-grid" id="latinGrid"></div>
+                    </div>
+                    <div id="german" class="tab-pane">
+                        <div class="braille-grid" id="germanGrid"></div>
+                    </div>
+                    <div id="french" class="tab-pane">
+                        <div class="braille-grid" id="frenchGrid"></div>
+                    </div>
+                    <div id="korean" class="tab-pane">
+                        <div class="braille-grid" id="koreanGrid"></div>
+                    </div>
+                    <div id="japanese" class="tab-pane">
+                        <div class="braille-grid" id="japaneseGrid"></div>
+                    </div>
+                    <div id="numbers" class="tab-pane">
+                        <div class="braille-grid" id="numbersGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Оверлей для индикации загрузки -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="spinner"></div>
+            <p id="loadingText">Обработка...</p>
+        </div>
+        
+        <!-- QR код для мобильной версии -->
+        <div class="mobile-qr">
+            <h3>Сканируйте для мобильной версии</h3>
+            <div id="mobileQrCode"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 A.I.K.A. - AI-көмекшісі | <a href="#" id="mobileQrBtn">Мобильная версия</a></p>
+    </footer>
+
+    <script src="AIKA.js"></script>
+</body>
+</html>
